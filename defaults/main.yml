@@ -1,0 +1,37 @@
+---
+# defaults file for coffeesprout.sshd
+#
+sshd_default_options:
+- name: "PasswordAuthentication"
+  value: "{{ ssh_password_authentication | default('no') }}"
+- name: "PermitRootLogin"
+  value: "{{ ssh_permit_root_login | default('no') }}"
+- name: "Port"
+  value: "{{ sshd_port | default('22') }}"
+- name: "UseDNS"
+  value: "{{ ssh_usedns | default('no') }}"
+- name: "PermitEmptyPasswords"
+  value: "{{ ssh_permit_empty_password | default('no') }}"
+- name: "ChallengeResponseAuthentication"
+  value: "{{ ssh_challenge_response_auth | default('no') }}"
+- name: "GSSAPIAuthentication"
+  value: "{{ ssh_gss_api_authentication | default('no') }}"
+- name: "X11Forwarding"
+  value: "{{ ssh_x11_forwarding | default('no') }}"
+- name: "Banner"
+  value: "{{ ssh_banner_path | default('/etc/issue.net') }}"
+
+ssh_issue_template: issue.net
+
+#Expects a list with name and optionally additional IP's; ssh_allow_ips are always allowed; Default allow all
+ssh_allow_users:
+- name: "*"
+
+ssh_deny_users:
+- "root"
+
+sshd_custom_options: []
+
+#List of IP's to always allow connections from. These will be added to each user; Default allow all
+ssh_allow_ips:
+- "*"

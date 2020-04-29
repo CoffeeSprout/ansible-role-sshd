@@ -1,0 +1,1 @@
+{% for user in ssh_allow_users %}{% for ip in user.allow_ips | default([]) %}{{ user.name }}@{{ ip }} {% endfor %}{% for ip in ssh_allow_ips %}{{ user.name }}@{{ ip }} {% endfor %}{% endfor %}

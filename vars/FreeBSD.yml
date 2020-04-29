@@ -1,0 +1,7 @@
+---
+
+sshd_platform_options:
+- name: "UsePAM"
+  value: "{{ ssh_use_pam | default('no') }}"
+- name: "SyslogFacility"
+  value: "{{ ssh_syslog_facility | default('LOCAL7') }}"

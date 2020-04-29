@@ -1,0 +1,38 @@
+---
+# tasks file for bvansomeren.sshd
+
+- name: ensure OS specifics are included
+  include_vars: "{{ item }}"
+  with_first_found:
+  - "{{ ansible_os_family }}.yml"
+  - main.yml
+  tags:
+  - sshd
+
+- name: ensure issue.net is created
+  template:
+    src: "{{ ssh_issue_template }}"
+    dest: /etc/issue.net
+  tags:
+  - sshd
+
+- name: ensure SSHD configuration is installed
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "^{{ item.name }}"
+    line: "{{ item.name }} {{ item.value }}"
+    state: present
+    validate: '/usr/sbin/sshd -t -f %s'
+    backup: True
+  with_items:
+  - "{{ sshd_default_options }}"
+  - "{{ sshd_custom_options }}"
+  - "{{ sshd_platform_options }}"
+  - name: AllowUsers
+    value: "{{ lookup('template', 'allowusers.j2') }}"
+  - name: DenyUsers
+    value: "{{ ssh_deny_users | join(', ') }}"
+  notify:
+  - Restart sshd
+  tags:
+  - sshd

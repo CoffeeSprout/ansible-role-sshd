@@ -1,0 +1,23 @@
+---
+- hosts: thuis.coffeesprout.com
+  become: True
+  roles:
+  - role: coffeesprout.sshd
+    sshd_custom_options:
+    - name: AllowGroups
+      value: wheel
+
+- hosts: centos7-test.coffeesprout.cloud
+  become: True
+  roles:
+  - role: coffeesprout.sshd
+    ssh_allow_users:
+    - name: barry
+      allow_ips:
+      - "192.168.*"
+    - name: coffeesprout
+    - name: manager
+      allow_ips:
+      - "example.com"
+    ssh_allow_ips:
+    - "10.*"
