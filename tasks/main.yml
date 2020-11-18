@@ -18,7 +18,7 @@
 
 - name: ensure SSHD configuration is installed
   lineinfile:
-    dest: "/etc/ssh/sshd_config"
+    dest: "{{ sshd_config_file | default('/etc/ssh/sshd_config') }}"
     regexp: "^{{ item.name }}"
     line: "{{ item.name }} {{ item.value }}"
     state: present
@@ -32,7 +32,20 @@
     value: "{{ lookup('template', 'allowusers.j2') }}"
   - name: DenyUsers
     value: "{{ ssh_deny_users | join(', ') }}"
-  notify:
-  - Restart sshd
+  register: sshd_config_changed
   tags:
   - sshd
+
+
+- name: Restart sshd
+  service:
+    name: sshd
+    state: reloaded
+  when: 'sshd_config_changed.changed and sshd_jail_name is not defined'
+
+- name: Restart jailed sshd
+  service:
+    name: sshd
+    state: reloaded
+    args: "-j {{ sshd_jail_name }}"
+  when: 'sshd_config_changed.changed and sshd_jail_name is defined'

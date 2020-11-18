@@ -1,6 +1,2 @@
 ---
 # handlers file for bvansomeren.sshd
-- name: Restart sshd
-  service:
-    name: sshd
-    state: reloaded
