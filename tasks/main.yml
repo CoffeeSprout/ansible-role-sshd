@@ -13,6 +13,9 @@
   template:
     src: "{{ ssh_issue_template }}"
     dest: /etc/issue.net
+    owner: 0
+    group: 0
+    mode: '0644'
   tags:
   - sshd
 

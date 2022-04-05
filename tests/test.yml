@@ -5,7 +5,7 @@
   - role: coffeesprout.sshd
     sshd_custom_options:
     - name: AllowGroups
-      value: wheel
+      value: "barry"
 
 - hosts: lab
   become: True
@@ -15,7 +15,7 @@
     - name: barry
       allow_ips:
       - "192.168.*"
-      - "172.16.0.*"
+      - "172.16.*"
     - name: coffeesprout
     - name: manager
       allow_ips:
