@@ -1,5 +1,5 @@
 ---
-- hosts: thuis.coffeesprout.com
+- hosts: lab
   become: True
   roles:
   - role: coffeesprout.sshd
@@ -7,7 +7,7 @@
     - name: AllowGroups
       value: wheel
 
-- hosts: centos7-test.coffeesprout.cloud
+- hosts: lab
   become: True
   roles:
   - role: coffeesprout.sshd
@@ -15,6 +15,7 @@
     - name: barry
       allow_ips:
       - "192.168.*"
+      - "172.16.0.*"
     - name: coffeesprout
     - name: manager
       allow_ips:
