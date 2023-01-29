@@ -22,6 +22,7 @@ galaxy_info:
   galaxy_tags:
   - freebsd
   - centos
+  - debian
   - sshd
 
 dependencies: []
