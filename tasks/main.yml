@@ -1,5 +1,5 @@
 ---
-# tasks file for bvansomeren.sshd
+# tasks file for coffeesprout.sshd
 
 - name: ensure OS specifics are included
   include_vars: "{{ item }}"
