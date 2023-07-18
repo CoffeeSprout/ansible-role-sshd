@@ -31,10 +31,6 @@
   - "{{ sshd_default_options }}"
   - "{{ sshd_custom_options }}"
   - "{{ sshd_platform_options }}"
-  - name: AllowUsers
-    value: "{{ lookup('template', 'allowusers.j2') }}"
-  - name: DenyUsers
-    value: "{{ ssh_deny_users | join(', ') }}"
   register: sshd_config_changed
   tags:
   - sshd
