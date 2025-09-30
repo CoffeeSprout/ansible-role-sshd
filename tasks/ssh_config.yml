@@ -1,9 +1,0 @@
----
-- name: ensure /etc/ssh/ssh_config has hosts
-  blockinfile:
-    dest: "{{ ssh_config_file | default('/etc/ssh/ssh_config') }}"
-    marker: "# {mark} Host added by Ansible: {{ item.hostname }}"
-    content: |
-      Host {{ item.hostname }}
-        Hostname {{ item.ip }}
-  with_items: "{{ jumphost_target_servers }}"

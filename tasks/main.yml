@@ -52,6 +52,3 @@
   when: 'sshd_config_changed.changed and sshd_jail_name is defined'
   tags:
     - molecule-notest
-
-    #- include_tasks: ssh_config.yml
-    #when: 'jumphost_target_servers is defined'
