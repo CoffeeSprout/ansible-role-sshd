@@ -52,3 +52,10 @@
   when: 'sshd_config_changed.changed and sshd_jail_name is defined'
   tags:
     - molecule-notest
+
+- name: Generate documentation
+  include_tasks: documentation.yml
+  when: doc_generate | default(true)
+  tags:
+    - docs
+    - documentation

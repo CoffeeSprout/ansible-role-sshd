@@ -1,0 +1,47 @@
+{
+  "role": "coffeesprout.sshd",
+  "server": "{{ inventory_hostname }}",
+  "configuration": {
+    "port": {{ sshd_port | default('22') }},
+    "password_authentication": "{{ ssh_password_authentication | default('no') }}",
+    "permit_root_login": "{{ ssh_permit_root_login | default('no') }}",
+    "x11_forwarding": "{{ ssh_x11_forwarding | default('no') }}",
+    "use_dns": "{{ ssh_usedns | default('no') }}",
+    "permit_empty_passwords": "{{ ssh_permit_empty_password | default('no') }}",
+    "challenge_response_authentication": "{{ ssh_challenge_response_auth | default('no') }}",
+    "gssapi_authentication": "{{ ssh_gss_api_authentication | default('no') }}"
+  },
+  "allowed_users": [
+{% if ssh_allow_users is defined %}
+{% for user in ssh_allow_users %}
+    {
+      "name": "{{ user.name }}",
+      "allow_ips": {{ user.allow_ips | default([]) | to_json }},
+      "global_ips": {{ ssh_allow_ips | default([]) | to_json }}
+    }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+  ],
+  "denied_users": {{ ssh_deny_users | default([]) | to_json }},
+  "custom_options": [
+{% if sshd_custom_options is defined %}
+{% for option in sshd_custom_options %}
+    {
+      "name": "{{ option.name }}",
+      "value": "{{ option.value }}"
+    }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+  ],
+  "files": {
+    "config": "{{ sshd_config_file | default('/etc/ssh/sshd_config') }}",
+    "host_keys": "/etc/ssh/ssh_host_*",
+    "banner": "{{ ssh_banner_path | default('/etc/issue.net') }}"
+  },
+  "service": {
+    "name": "sshd",
+    "unit": "sshd.service"
+  }
+}

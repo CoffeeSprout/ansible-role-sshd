@@ -1,0 +1,160 @@
+# SSH Configuration
+
+**Server**: {{ inventory_hostname }}
+**Role**: coffeesprout.sshd
+
+## Quick Access
+
+```bash
+ssh{% if sshd_port | default('22') != '22' %} -p {{ sshd_port | default('22') }}{% endif %} <username>@{{ inventory_hostname }}
+```
+
+## Configuration Summary
+
+| Setting | Value |
+|---------|-------|
+| Port | {{ sshd_port | default('22') }} |
+| PasswordAuthentication | {{ ssh_password_authentication | default('no') }} |
+| PermitRootLogin | {{ ssh_permit_root_login | default('no') }} |
+| X11Forwarding | {{ ssh_x11_forwarding | default('no') }} |
+| UseDNS | {{ ssh_usedns | default('no') }} |
+| PermitEmptyPasswords | {{ ssh_permit_empty_password | default('no') }} |
+| ChallengeResponseAuthentication | {{ ssh_challenge_response_auth | default('no') }} |
+| GSSAPIAuthentication | {{ ssh_gss_api_authentication | default('no') }} |
+
+## Allowed Users
+
+{% if ssh_allow_users is defined and ssh_allow_users | length > 0 %}
+| User | Access From |
+|------|-------------|
+{% for user in ssh_allow_users %}
+| {{ user.name }} | {% if user.allow_ips is defined %}{{ user.allow_ips | join(', ') }}{% endif %}{% if ssh_allow_ips is defined %}, {{ ssh_allow_ips | join(', ') }}{% endif %} |
+{% endfor %}
+{% else %}
+No specific users configured (default: all users allowed)
+{% endif %}
+
+## Denied Users
+
+{% if ssh_deny_users is defined and ssh_deny_users | length > 0 %}
+{{ ssh_deny_users | join(', ') }}
+{% else %}
+None explicitly denied
+{% endif %}
+
+## Custom Options
+
+{% if sshd_custom_options is defined and sshd_custom_options | length > 0 %}
+| Option | Value |
+|--------|-------|
+{% for option in sshd_custom_options %}
+| {{ option.name }} | {{ option.value }} |
+{% endfor %}
+{% else %}
+No custom options configured
+{% endif %}
+
+## Files & Locations
+
+- **Config**: {{ sshd_config_file | default('/etc/ssh/sshd_config') }}
+- **Host Keys**: /etc/ssh/ssh_host_*
+- **Banner**: {{ ssh_banner_path | default('/etc/issue.net') }}
+
+## Service Management
+
+### Check Status
+```bash
+sudo systemctl status sshd
+```
+
+### Restart SSH
+```bash
+# Validate configuration before restarting
+sudo sshd -t
+
+# Reload configuration (safer - doesn't kill connections)
+sudo systemctl reload sshd
+
+# Full restart (kills active connections)
+sudo systemctl restart sshd
+```
+
+### View Logs
+```bash
+# Recent SSH activity
+sudo journalctl -u sshd --since today
+
+# Follow live SSH logs
+sudo journalctl -u sshd -f
+
+# Failed login attempts
+sudo journalctl -u sshd | grep -i failed
+
+# Successful logins
+sudo journalctl -u sshd | grep -i accepted
+```
+
+## Configuration Changes
+
+### Add User to AllowUsers
+1. Edit {{ sshd_config_file | default('/etc/ssh/sshd_config') }}
+2. Add user to AllowUsers line
+3. Validate: `sudo sshd -t`
+4. Reload: `sudo systemctl reload sshd`
+
+### Change SSH Port
+1. Edit {{ sshd_config_file | default('/etc/ssh/sshd_config') }}
+2. Update `Port` directive
+3. Update firewall rules
+4. Validate: `sudo sshd -t`
+5. Restart: `sudo systemctl restart sshd`
+
+## Troubleshooting
+
+### Connection Refused
+```bash
+# Check if SSH is running
+sudo systemctl status sshd
+
+# Check listening ports
+sudo ss -tlnp | grep ssh
+
+# Check firewall
+{% if ansible_os_family == 'Debian' %}
+sudo ufw status
+{% elif ansible_os_family == 'RedHat' %}
+sudo firewall-cmd --list-all
+{% endif %}
+```
+
+### Permission Denied (publickey)
+```bash
+# Verify AllowUsers includes your username
+grep AllowUsers {{ sshd_config_file | default('/etc/ssh/sshd_config') }}
+
+# Check authorized_keys permissions
+ls -la ~/.ssh/authorized_keys
+# Should be: -rw------- (600)
+
+# Check .ssh directory permissions
+ls -ld ~/.ssh
+# Should be: drwx------ (700)
+```
+
+### Configuration Test Failed
+```bash
+# Test configuration syntax
+sudo sshd -t
+
+# Test with verbose output
+sudo sshd -t -f {{ sshd_config_file | default('/etc/ssh/sshd_config') }}
+```
+
+## Security Notes
+
+- Password authentication: **{{ ssh_password_authentication | default('no') }}** ({{ 'Secure' if ssh_password_authentication | default('no') == 'no' else 'WARNING: Consider disabling' }})
+- Root login: **{{ ssh_permit_root_login | default('no') }}** ({{ 'Secure' if ssh_permit_root_login | default('no') == 'no' else 'WARNING: Consider disabling' }})
+- Public key authentication required
+{% if ssh_allow_users is defined and ssh_allow_users | length > 0 %}
+- User whitelist enabled ({{ ssh_allow_users | length }} users allowed)
+{% endif %}

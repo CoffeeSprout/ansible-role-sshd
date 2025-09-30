@@ -1,0 +1,28 @@
+---
+# Documentation generation for coffeesprout.sshd
+
+- name: Ensure documentation directory exists
+  file:
+    path: "{{ doc_output_dir }}/{{ inventory_hostname }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  become: false
+  run_once: false
+
+- name: Generate SSHD markdown documentation
+  template:
+    src: docs/sshd.md.j2
+    dest: "{{ doc_output_dir }}/{{ inventory_hostname }}/sshd.md"
+    mode: '0644'
+  delegate_to: localhost
+  become: false
+
+- name: Generate SSHD JSON documentation
+  template:
+    src: docs/sshd.json.j2
+    dest: "{{ doc_output_dir }}/{{ inventory_hostname }}/sshd.json"
+    mode: '0644'
+  delegate_to: localhost
+  become: false
+  when: doc_format in ['both', 'json']

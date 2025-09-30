@@ -479,3 +479,82 @@
           - config_mtime_final.stat.size > 0
         fail_msg: "Config file corrupted or missing after verification tests"
         success_msg: "Config file remains valid after all verification tests"
+
+    # Documentation generation tests
+    - name: Check that SSHD markdown documentation was generated
+      stat:
+        path: "/tmp/ansible-docs/{{ inventory_hostname }}/sshd.md"
+      register: sshd_md_doc
+      delegate_to: localhost
+      become: false
+
+    - name: Verify SSHD markdown documentation exists
+      assert:
+        that:
+          - sshd_md_doc.stat.exists
+        fail_msg: "SSHD markdown documentation was not generated"
+        success_msg: "SSHD markdown documentation exists"
+
+    - name: Check that SSHD JSON documentation was generated
+      stat:
+        path: "/tmp/ansible-docs/{{ inventory_hostname }}/sshd.json"
+      register: sshd_json_doc
+      delegate_to: localhost
+      become: false
+
+    - name: Verify SSHD JSON documentation exists
+      assert:
+        that:
+          - sshd_json_doc.stat.exists
+        fail_msg: "SSHD JSON documentation was not generated"
+        success_msg: "SSHD JSON documentation exists"
+
+    - name: Read SSHD markdown documentation
+      slurp:
+        path: "/tmp/ansible-docs/{{ inventory_hostname }}/sshd.md"
+      register: sshd_md_content
+      delegate_to: localhost
+      become: false
+
+    - name: Verify documentation contains key SSH configuration
+      assert:
+        that:
+          - "'2222' in (sshd_md_content.content | b64decode)"
+          - "'PasswordAuthentication' in (sshd_md_content.content | b64decode)"
+          - "'Allowed Users' in (sshd_md_content.content | b64decode)"
+          - "'admin' in (sshd_md_content.content | b64decode)"
+          - "'deploy' in (sshd_md_content.content | b64decode)"
+          - "'testuser' in (sshd_md_content.content | b64decode)"
+        fail_msg: "Documentation missing expected SSH configuration details"
+        success_msg: "Documentation contains expected SSH configuration"
+
+    - name: Read SSHD JSON documentation
+      slurp:
+        path: "/tmp/ansible-docs/{{ inventory_hostname }}/sshd.json"
+      register: sshd_json_content
+      delegate_to: localhost
+      become: false
+
+    - name: Parse JSON documentation
+      set_fact:
+        sshd_json_data: "{{ sshd_json_content.content | b64decode | from_json }}"
+
+    - name: Verify JSON documentation structure
+      assert:
+        that:
+          - sshd_json_data.role == "coffeesprout.sshd"
+          - sshd_json_data.configuration.port == 2222
+          - sshd_json_data.configuration.password_authentication == "no"
+          - sshd_json_data.allowed_users | length == 3
+          - sshd_json_data.denied_users | length == 2
+        fail_msg: "JSON documentation structure is invalid or incomplete"
+        success_msg: "JSON documentation is valid and complete"
+
+    - name: Verify documentation contains no sensitive information
+      assert:
+        that:
+          - "'password:' not in (sshd_md_content.content | b64decode | lower)"
+          - "'secret' not in (sshd_md_content.content | b64decode | lower)"
+          - "'private' not in (sshd_md_content.content | b64decode | lower)"
+        fail_msg: "Documentation may contain sensitive information"
+        success_msg: "Documentation contains no obvious secrets"

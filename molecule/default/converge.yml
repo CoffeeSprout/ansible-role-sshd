@@ -6,6 +6,9 @@
   vars:
     project_name: "CaffeineStacks Test Environment"
 
+    # Documentation output for testing
+    doc_output_dir: "/tmp/ansible-docs"
+
     # Test custom SSH configuration
     sshd_port: 2222
     ssh_password_authentication: "no"

@@ -39,3 +39,8 @@ sshd_custom_options: []
 #List of IP's to always allow connections from. These will be added to each user; Default allow all
 ssh_allow_ips:
 - "*"
+
+# Documentation generation settings
+doc_generate: true
+doc_output_dir: "{{ playbook_dir }}/documentation"
+doc_format: "both"  # Options: markdown, json, both
