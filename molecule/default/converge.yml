@@ -1,0 +1,67 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    project_name: "CaffeineStacks Test Environment"
+
+    # Test custom SSH configuration
+    sshd_port: 2222
+    ssh_password_authentication: "no"
+    ssh_permit_root_login: "no"
+    ssh_usedns: "no"
+    ssh_x11_forwarding: "no"
+
+    # Test AllowUsers configuration
+    ssh_allow_users:
+      - name: "admin"
+        allow_ips:
+          - "10.0.0.0/8"
+      - name: "deploy"
+      - name: "testuser"
+        allow_ips:
+          - "192.168.1.0/24"
+
+    ssh_deny_users:
+      - "root"
+      - "nobody"
+
+    # Test custom SSH options
+    ssh_allow_ips:
+      - "172.16.0.0/12"
+      - "*"
+
+    sshd_custom_options:
+      - name: "MaxAuthTries"
+        value: "3"
+      - name: "LoginGraceTime"
+        value: "30s"
+      - name: "ClientAliveInterval"
+        value: "300"
+
+  pre_tasks:
+    - name: Gather facts
+      setup:
+
+  roles:
+    - role: coffeesprout.sshd
+
+  post_tasks:
+    - name: Verify sshd_config exists
+      stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config_check
+
+    - name: Display sshd_config status
+      debug:
+        msg: "SSHD config exists: {{ sshd_config_check.stat.exists }}"
+
+    - name: Verify issue.net exists
+      stat:
+        path: /etc/issue.net
+      register: issue_net_check
+
+    - name: Display issue.net status
+      debug:
+        msg: "Issue.net exists: {{ issue_net_check.stat.exists }}"

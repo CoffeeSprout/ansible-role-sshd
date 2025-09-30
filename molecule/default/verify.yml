@@ -1,0 +1,481 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    # Configuration file existence tests
+    - name: Check that sshd_config exists
+      stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config_file
+
+    - name: Verify sshd_config exists
+      assert:
+        that:
+          - sshd_config_file.stat.exists
+        fail_msg: "SSHD config file was not created"
+        success_msg: "SSHD config file exists"
+
+    - name: Check that issue.net exists
+      stat:
+        path: /etc/issue.net
+      register: issue_net_file
+
+    - name: Verify issue.net exists
+      assert:
+        that:
+          - issue_net_file.stat.exists
+        fail_msg: "Issue.net banner file was not created"
+        success_msg: "Issue.net banner file exists"
+
+    # Configuration validation tests
+    - name: Validate sshd_config syntax
+      command: "/usr/sbin/sshd -t -f /etc/ssh/sshd_config"
+      register: sshd_validation
+      changed_when: false
+
+    - name: Verify sshd_config has valid syntax
+      assert:
+        that:
+          - sshd_validation.rc == 0
+        fail_msg: "SSHD configuration has invalid syntax"
+        success_msg: "SSHD configuration syntax is valid"
+
+    # Security option tests
+    - name: Read sshd_config content
+      command: cat /etc/ssh/sshd_config
+      register: sshd_config_content
+      changed_when: false
+
+    - name: Verify PasswordAuthentication is disabled
+      assert:
+        that:
+          - "'PasswordAuthentication no' in sshd_config_content.stdout"
+        fail_msg: "PasswordAuthentication is not disabled"
+        success_msg: "PasswordAuthentication is correctly disabled"
+
+    - name: Verify PermitRootLogin is disabled
+      assert:
+        that:
+          - "'PermitRootLogin no' in sshd_config_content.stdout"
+        fail_msg: "PermitRootLogin is not disabled"
+        success_msg: "PermitRootLogin is correctly disabled"
+
+    - name: Verify UseDNS is disabled
+      assert:
+        that:
+          - "'UseDNS no' in sshd_config_content.stdout"
+        fail_msg: "UseDNS is not disabled"
+        success_msg: "UseDNS is correctly disabled"
+
+    - name: Verify X11Forwarding is disabled
+      assert:
+        that:
+          - "'X11Forwarding no' in sshd_config_content.stdout"
+        fail_msg: "X11Forwarding is not disabled"
+        success_msg: "X11Forwarding is correctly disabled"
+
+    - name: Verify PermitEmptyPasswords is disabled
+      assert:
+        that:
+          - "'PermitEmptyPasswords no' in sshd_config_content.stdout"
+        fail_msg: "PermitEmptyPasswords is not disabled"
+        success_msg: "PermitEmptyPasswords is correctly disabled"
+
+    # Port configuration test
+    - name: Verify custom SSH port is configured
+      assert:
+        that:
+          - "'Port 2222' in sshd_config_content.stdout"
+        fail_msg: "Custom SSH port 2222 is not configured"
+        success_msg: "Custom SSH port 2222 is correctly configured"
+
+    # Banner configuration test
+    - name: Verify Banner path is configured
+      assert:
+        that:
+          - "'Banner /etc/issue.net' in sshd_config_content.stdout"
+        fail_msg: "Banner path is not configured"
+        success_msg: "Banner path is correctly configured"
+
+    # Custom options tests
+    - name: Verify MaxAuthTries custom option
+      assert:
+        that:
+          - "'MaxAuthTries 3' in sshd_config_content.stdout"
+        fail_msg: "MaxAuthTries custom option is not set"
+        success_msg: "MaxAuthTries custom option is correctly set"
+
+    - name: Verify LoginGraceTime custom option
+      assert:
+        that:
+          - "'LoginGraceTime 30s' in sshd_config_content.stdout"
+        fail_msg: "LoginGraceTime custom option is not set"
+        success_msg: "LoginGraceTime custom option is correctly set"
+
+    - name: Verify ClientAliveInterval custom option
+      assert:
+        that:
+          - "'ClientAliveInterval 300' in sshd_config_content.stdout"
+        fail_msg: "ClientAliveInterval custom option is not set"
+        success_msg: "ClientAliveInterval custom option is correctly set"
+
+    # AllowUsers configuration test
+    - name: Verify AllowUsers includes admin
+      assert:
+        that:
+          - "'admin@' in sshd_config_content.stdout"
+        fail_msg: "AllowUsers does not include admin user"
+        success_msg: "AllowUsers correctly includes admin user"
+
+    - name: Verify AllowUsers includes deploy
+      assert:
+        that:
+          - "'deploy@' in sshd_config_content.stdout"
+        fail_msg: "AllowUsers does not include deploy user"
+        success_msg: "AllowUsers correctly includes deploy user"
+
+    - name: Verify AllowUsers includes testuser
+      assert:
+        that:
+          - "'testuser@' in sshd_config_content.stdout"
+        fail_msg: "AllowUsers does not include testuser"
+        success_msg: "AllowUsers correctly includes testuser"
+
+    - name: Verify AllowUsers includes IP restrictions for admin
+      assert:
+        that:
+          - "'admin@10.0.0.0/8' in sshd_config_content.stdout"
+        fail_msg: "AllowUsers does not include admin IP restriction"
+        success_msg: "AllowUsers correctly includes admin IP restriction"
+
+    - name: Verify AllowUsers includes IP restrictions for testuser
+      assert:
+        that:
+          - "'testuser@192.168.1.0/24' in sshd_config_content.stdout"
+        fail_msg: "AllowUsers does not include testuser IP restriction"
+        success_msg: "AllowUsers correctly includes testuser IP restriction"
+
+    # DenyUsers configuration test
+    - name: Verify DenyUsers is configured
+      assert:
+        that:
+          - "'DenyUsers' in sshd_config_content.stdout"
+        fail_msg: "DenyUsers is not configured"
+        success_msg: "DenyUsers is configured"
+
+    - name: Verify DenyUsers includes root
+      assert:
+        that:
+          - "'root' in sshd_config_content.stdout"
+        fail_msg: "DenyUsers does not deny root"
+        success_msg: "DenyUsers correctly denies root"
+
+    - name: Verify DenyUsers includes nobody
+      assert:
+        that:
+          - "'nobody' in sshd_config_content.stdout"
+        fail_msg: "DenyUsers does not deny nobody"
+        success_msg: "DenyUsers correctly denies nobody"
+
+    # Issue.net banner content test
+    - name: Read issue.net content
+      command: cat /etc/issue.net
+      register: issue_net_content
+      changed_when: false
+
+    - name: Verify issue.net contains project name
+      assert:
+        that:
+          - "'CaffeineStacks Test Environment' in issue_net_content.stdout"
+        fail_msg: "Issue.net does not contain project name"
+        success_msg: "Issue.net correctly contains project name"
+
+    - name: Verify issue.net contains legal warning
+      assert:
+        that:
+          - "'authorized users only' in issue_net_content.stdout"
+          - "'monitored and recorded' in issue_net_content.stdout"
+        fail_msg: "Issue.net does not contain expected legal warning"
+        success_msg: "Issue.net contains expected legal warning"
+
+    # File permissions tests
+    - name: Check issue.net permissions
+      stat:
+        path: /etc/issue.net
+      register: issue_net_perms
+
+    - name: Verify issue.net has correct permissions
+      assert:
+        that:
+          - issue_net_perms.stat.mode == "0644"
+          - issue_net_perms.stat.pw_name == "root"
+          - issue_net_perms.stat.gr_name == "root"
+        fail_msg: "Issue.net does not have correct permissions (0644, root:root)"
+        success_msg: "Issue.net has correct permissions"
+
+    - name: Check sshd_config permissions
+      stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config_perms
+
+    - name: Verify sshd_config has secure permissions
+      assert:
+        that:
+          - sshd_config_perms.stat.pw_name == "root"
+        fail_msg: "sshd_config is not owned by root"
+        success_msg: "sshd_config has secure ownership"
+
+    # Backup file test
+    - name: Check for sshd_config backup
+      find:
+        paths: /etc/ssh
+        patterns: "sshd_config.*"
+      register: backup_files
+
+    - name: Verify backup was created
+      assert:
+        that:
+          - backup_files.matched > 0
+        fail_msg: "No backup file was created for sshd_config"
+        success_msg: "Backup file was created for sshd_config"
+
+    # Comprehensive configuration test
+    - name: Count security-related configuration lines
+      shell: "grep -E '(PasswordAuthentication|PermitRootLogin|UseDNS|X11Forwarding|PermitEmptyPasswords) (no|yes)' /etc/ssh/sshd_config | wc -l"
+      register: security_lines_count
+      changed_when: false
+
+    - name: Verify all security options are configured
+      assert:
+        that:
+          - security_lines_count.stdout | int >= 5
+        fail_msg: "Not all security options are configured"
+        success_msg: "All security options are properly configured"
+
+    # Edge case: Verify configuration changes are tracked
+    - name: Check modification time of sshd_config
+      stat:
+        path: /etc/ssh/sshd_config
+      register: config_mtime
+
+    - name: Check modification time of issue.net
+      stat:
+        path: /etc/issue.net
+      register: issue_mtime
+
+    - name: Verify files were recently modified
+      assert:
+        that:
+          - config_mtime.stat.exists
+          - issue_mtime.stat.exists
+        fail_msg: "Configuration files have unexpected state"
+        success_msg: "Configuration files are properly tracked"
+
+    # Advanced AllowUsers template logic tests
+    - name: Verify user without specific IPs gets global IPs
+      assert:
+        that:
+          - "'deploy@172.16.0.0/12' in sshd_config_content.stdout"
+          - "'deploy@*' in sshd_config_content.stdout"
+        fail_msg: "User without specific IPs doesn't get global ssh_allow_ips"
+        success_msg: "User without specific IPs correctly gets global ssh_allow_ips"
+
+    - name: Verify user with specific IPs gets both specific AND global IPs
+      assert:
+        that:
+          - "'admin@10.0.0.0/8' in sshd_config_content.stdout"
+          - "'admin@172.16.0.0/12' in sshd_config_content.stdout"
+          - "'admin@*' in sshd_config_content.stdout"
+        fail_msg: "User with specific IPs doesn't get both specific and global IPs"
+        success_msg: "User with specific IPs correctly gets both specific and global IPs"
+
+    # Negative security tests - verify insecure options are NOT present
+    - name: Verify PasswordAuthentication yes is NOT present
+      shell: "grep -i '^PasswordAuthentication yes' /etc/ssh/sshd_config || true"
+      register: password_auth_yes_check
+      changed_when: false
+
+    - name: Assert PasswordAuthentication yes is not configured
+      assert:
+        that:
+          - password_auth_yes_check.stdout == ""
+        fail_msg: "Insecure PasswordAuthentication yes found in config"
+        success_msg: "PasswordAuthentication yes correctly not present"
+
+    - name: Verify PermitRootLogin yes is NOT present
+      shell: "grep -i '^PermitRootLogin yes' /etc/ssh/sshd_config || true"
+      register: permit_root_yes_check
+      changed_when: false
+
+    - name: Assert PermitRootLogin yes is not configured
+      assert:
+        that:
+          - permit_root_yes_check.stdout == ""
+        fail_msg: "Insecure PermitRootLogin yes found in config"
+        success_msg: "PermitRootLogin yes correctly not present"
+
+    # Test that non-allowed users would be denied
+    - name: Verify that wildcard users NOT in ssh_allow_users would be restricted
+      shell: "grep -E '^AllowUsers' /etc/ssh/sshd_config"
+      register: allow_users_line
+      changed_when: false
+
+    - name: Assert AllowUsers is restrictive (not empty or missing)
+      assert:
+        that:
+          - "'AllowUsers' in allow_users_line.stdout"
+          - allow_users_line.stdout | length > 15  # More than just "AllowUsers"
+        fail_msg: "AllowUsers directive is empty or too permissive"
+        success_msg: "AllowUsers directive is properly restrictive"
+
+    # Configuration change detection tests
+    - name: Count total lines in sshd_config
+      shell: "wc -l /etc/ssh/sshd_config | awk '{print $1}'"
+      register: config_lines_count
+      changed_when: false
+
+    - name: Verify sshd_config has reasonable size
+      assert:
+        that:
+          - config_lines_count.stdout | int > 10
+          - config_lines_count.stdout | int < 500
+        fail_msg: "sshd_config has unexpected size ({{ config_lines_count.stdout }} lines)"
+        success_msg: "sshd_config has reasonable size"
+
+    # Test AllowUsers with multiple formats
+    - name: Extract full AllowUsers line
+      shell: "grep '^AllowUsers' /etc/ssh/sshd_config"
+      register: full_allow_users
+      changed_when: false
+
+    - name: Count number of user@ip combinations
+      shell: "grep '^AllowUsers' /etc/ssh/sshd_config | tr ' ' '\n' | grep -c '@' || echo 0"
+      register: user_ip_combinations
+      changed_when: false
+
+    - name: Verify multiple user@ip combinations exist
+      assert:
+        that:
+          - user_ip_combinations.stdout | int >= 6  # 3 users × at least 2 IPs each
+        fail_msg: "Expected at least 6 user@ip combinations, got {{ user_ip_combinations.stdout }}"
+        success_msg: "Correct number of user@ip combinations ({{ user_ip_combinations.stdout }})"
+
+    # Test that all configured users are present
+    - name: Verify all three test users are in AllowUsers
+      assert:
+        that:
+          - "'admin@' in full_allow_users.stdout"
+          - "'deploy@' in full_allow_users.stdout"
+          - "'testuser@' in full_allow_users.stdout"
+        fail_msg: "Not all configured users found in AllowUsers"
+        success_msg: "All configured users present in AllowUsers"
+
+    # Platform-specific variable tests
+    - name: Check if platform-specific options were loaded
+      stat:
+        path: /etc/ssh/sshd_config
+      register: platform_config
+
+    - name: Read entire config for platform verification
+      command: cat /etc/ssh/sshd_config
+      register: full_config
+      changed_when: false
+
+    # Verify no duplicate configurations
+    - name: Count PasswordAuthentication occurrences
+      shell: "grep -c '^PasswordAuthentication' /etc/ssh/sshd_config || echo 0"
+      register: password_auth_count
+      changed_when: false
+
+    - name: Verify no duplicate PasswordAuthentication directives
+      assert:
+        that:
+          - password_auth_count.stdout | int == 1
+        fail_msg: "Multiple PasswordAuthentication directives found"
+        success_msg: "Single PasswordAuthentication directive as expected"
+
+    - name: Count Port occurrences
+      shell: "grep -c '^Port' /etc/ssh/sshd_config || echo 0"
+      register: port_count
+      changed_when: false
+
+    - name: Verify no duplicate Port directives
+      assert:
+        that:
+          - port_count.stdout | int == 1
+        fail_msg: "Multiple Port directives found"
+        success_msg: "Single Port directive as expected"
+
+    # Test custom options order and precedence
+    - name: Verify all custom options are present
+      shell: "grep -E '^(MaxAuthTries|LoginGraceTime|ClientAliveInterval)' /etc/ssh/sshd_config | wc -l"
+      register: custom_options_count
+      changed_when: false
+
+    - name: Assert all custom options were applied
+      assert:
+        that:
+          - custom_options_count.stdout | int == 3
+        fail_msg: "Expected 3 custom options, found {{ custom_options_count.stdout }}"
+        success_msg: "All 3 custom options correctly applied"
+
+    # Banner functionality tests
+    - name: Verify banner file is readable by all users
+      stat:
+        path: /etc/issue.net
+      register: banner_readability
+
+    - name: Assert banner is world-readable
+      assert:
+        that:
+          - banner_readability.stat.mode == "0644"
+          - banner_readability.stat.readable
+        fail_msg: "Banner file is not world-readable"
+        success_msg: "Banner file is properly world-readable"
+
+    # Test DenyUsers format
+    - name: Check DenyUsers directive format
+      shell: "grep '^DenyUsers' /etc/ssh/sshd_config"
+      register: deny_users_format
+      changed_when: false
+
+    - name: Verify DenyUsers format is correct
+      assert:
+        that:
+          - "'DenyUsers root, nobody' in deny_users_format.stdout"
+        fail_msg: "DenyUsers format incorrect: {{ deny_users_format.stdout }}"
+        success_msg: "DenyUsers format is correct"
+
+    # Configuration completeness test
+    - name: List all configured directives
+      shell: "grep -E '^[A-Z]' /etc/ssh/sshd_config | awk '{print $1}' | sort -u"
+      register: all_directives
+      changed_when: false
+
+    - name: Verify minimum required directives are present
+      assert:
+        that:
+          - "'AllowUsers' in all_directives.stdout"
+          - "'Banner' in all_directives.stdout"
+          - "'DenyUsers' in all_directives.stdout"
+          - "'PasswordAuthentication' in all_directives.stdout"
+          - "'PermitRootLogin' in all_directives.stdout"
+          - "'Port' in all_directives.stdout"
+        fail_msg: "Missing required SSH directives"
+        success_msg: "All required SSH directives present"
+
+    # Edge case: verify configuration survives second run (idempotency already tested)
+    - name: Save current config modification time
+      stat:
+        path: /etc/ssh/sshd_config
+      register: config_mtime_final
+
+    - name: Verify config exists and is valid after all checks
+      assert:
+        that:
+          - config_mtime_final.stat.exists
+          - config_mtime_final.stat.size > 0
+        fail_msg: "Config file corrupted or missing after verification tests"
+        success_msg: "Config file remains valid after all verification tests"

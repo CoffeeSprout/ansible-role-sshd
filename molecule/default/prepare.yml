@@ -1,0 +1,81 @@
+---
+- name: Prepare Debian
+  hosts: debian12-sshd
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Update package cache (Debian)
+      raw: "apt-get update"
+
+    - name: Install Python and packages (Debian)
+      raw: "apt-get install -y python3 sudo openssh-server"
+
+    - name: Gather facts
+      setup:
+
+    - name: Ensure /etc/ssh directory exists
+      file:
+        path: /etc/ssh
+        state: directory
+        mode: '0755'
+
+    - name: Create basic sshd_config if missing
+      copy:
+        dest: /etc/ssh/sshd_config
+        content: |
+          # Minimal sshd_config for testing
+          Port 22
+          Protocol 2
+        mode: '0644'
+        force: false
+
+    - name: Create privilege separation directory
+      file:
+        path: /run/sshd
+        state: directory
+        mode: '0755'
+
+    - name: Generate SSH host keys
+      command: "ssh-keygen -A"
+      args:
+        creates: /etc/ssh/ssh_host_rsa_key
+
+- name: Prepare AlmaLinux
+  hosts: alma9-sshd
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Install Python and packages (AlmaLinux)
+      raw: "dnf install -y python3 sudo openssh-server"
+
+    - name: Gather facts
+      setup:
+
+    - name: Ensure /etc/ssh directory exists
+      file:
+        path: /etc/ssh
+        state: directory
+        mode: '0755'
+
+    - name: Create basic sshd_config if missing
+      copy:
+        dest: /etc/ssh/sshd_config
+        content: |
+          # Minimal sshd_config for testing
+          Port 22
+          Protocol 2
+        mode: '0644'
+        force: false
+
+    - name: Create privilege separation directory
+      file:
+        path: /run/sshd
+        state: directory
+        mode: '0755'
+
+    - name: Generate SSH host keys
+      command: "ssh-keygen -A"
+      args:
+        creates: /etc/ssh/ssh_host_rsa_key

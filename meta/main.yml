@@ -2,6 +2,8 @@ galaxy_info:
   author: Barry van Someren
   description: Ensure consistent settings for SSHD
   company: CoffeeSprout ICT Services
+  role_name: sshd
+  namespace: coffeesprout
 
   license: BSD
 
