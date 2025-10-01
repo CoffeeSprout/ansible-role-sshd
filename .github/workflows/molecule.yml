@@ -17,6 +17,8 @@ jobs:
       matrix:
         distro:
           - debian:12
+          - debian:13
+          - almalinux:8
           - almalinux:9
       fail-fast: false
 

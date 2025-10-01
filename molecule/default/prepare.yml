@@ -1,6 +1,6 @@
 ---
 - name: Prepare Debian
-  hosts: debian12-sshd
+  hosts: debian*-sshd
   become: true
   gather_facts: false
 
@@ -41,14 +41,53 @@
       args:
         creates: /etc/ssh/ssh_host_rsa_key
 
-- name: Prepare AlmaLinux
+- name: Prepare AlmaLinux 9
   hosts: alma9-sshd
   become: true
   gather_facts: false
 
   tasks:
-    - name: Install Python and packages (AlmaLinux)
+    - name: Install Python and packages (AlmaLinux 9)
       raw: "dnf install -y python3 sudo openssh-server"
+
+    - name: Gather facts
+      setup:
+
+    - name: Ensure /etc/ssh directory exists
+      file:
+        path: /etc/ssh
+        state: directory
+        mode: '0755'
+
+    - name: Create basic sshd_config if missing
+      copy:
+        dest: /etc/ssh/sshd_config
+        content: |
+          # Minimal sshd_config for testing
+          Port 22
+          Protocol 2
+        mode: '0644'
+        force: false
+
+    - name: Create privilege separation directory
+      file:
+        path: /run/sshd
+        state: directory
+        mode: '0755'
+
+    - name: Generate SSH host keys
+      command: "ssh-keygen -A"
+      args:
+        creates: /etc/ssh/ssh_host_rsa_key
+
+- name: Prepare AlmaLinux 8
+  hosts: alma8-sshd
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Install Python 3.11 and packages (AlmaLinux 8)
+      raw: "dnf install -y python3.11 sudo openssh-server && alternatives --set python3 /usr/bin/python3.11"
 
     - name: Gather facts
       setup:
