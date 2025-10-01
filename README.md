@@ -1,6 +1,8 @@
 coffeesprout.sshd
 =========
 
+![Molecule Tests](https://github.com/CoffeeSprout/ansible-role-sshd/actions/workflows/molecule.yml/badge.svg)
+
 Ensure consistent settings for SSHD across FreeBSD, Debian, and RHEL-based systems.
 
 **⚠️ Security Notice:** This role enforces secure defaults including:
